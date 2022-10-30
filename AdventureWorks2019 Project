@@ -1,5 +1,4 @@
 /*
-
 AdventureWorks 2019 
 
 Task 1 - The regional sales in the best performing country
@@ -20,7 +19,6 @@ SELECT *
 FROM [AdventureWorks2019].[Sales].[SalesTerritory]
 
 /*
-
 Task 2 - The relationship between annual leave taken and bonus
 */
 
@@ -35,18 +33,10 @@ ORDER BY [Annual Leave]
 
 
 /*
-
 Task 3 - The revenue for each country
 
+Firstly, create View for StoreWithDemographics
 */
-
-
-/*
-
-Create View for StoreWithDemographics
-
-*/
-
 
 CREATE VIEW [Sales].[vStoreWithDemographics] AS 
 SELECT 
@@ -74,13 +64,9 @@ SELECT
         (/StoreSurvey/NumberEmployees)[1]', 'integer') AS [NumberEmployees] 
 FROM [Sales].[Store] s;
 
-
 /*
-
-Create View for StoreWithAddresses
-
+Then, create View for StoreWithAddresses
 */
-
 
 CREATE VIEW [Sales].[vStoreWithAddresses] AS 
 SELECT 
@@ -106,9 +92,7 @@ FROM [Sales].[Store] s
     ON at.[AddressTypeID] = bea.[AddressTypeID];
     
 /*
-
-Finding the revenue for each country
-
+Finally, finding the revenue for each country
 */
 
 SELECT CountryRegionName AS [Country]
@@ -122,10 +106,8 @@ GROUP BY CountryRegionName
 ORDER BY [Total Revenue] DESC
 
 
-/*
-
+*/
 Task 4 - Average Sick Leave per Job (Using Subquery)
-
 */
 
 SELECT [OrganizationLevel], [NewJob] AS [JobTitle], AVG(SickLeaveHours) AS [AverageSickLeave]
@@ -145,9 +127,7 @@ GROUP BY [NewJob], [OrganizationLevel]
 ORDER BY [OrganizationLevel], [AverageSickLeave] DESC
 
 /*
-
 Task 5 - Average Sick Leave per Job (Using Subquery)
-
 */
 
 SELECT [Name]
@@ -170,9 +150,7 @@ SELECT
  ORDER BY [Annual Revenue] DESC
 
 /*
-
 Task 6 - The relationship between the size of the stores, number of employees and revenue
-
 */
 
 SELECT [SquareFeet]
