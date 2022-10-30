@@ -1,0 +1,198 @@
+/*
+
+AdventureWorks 2019 
+
+Task 1 - The regional sales in the best performing country
+*/
+
+SELECT SalesTerritory.Name AS Region
+	  ,SalesTerritory.CountryRegionCode	  
+	  ,SalesTerritory.SalesYTD AS [SalesYTD]
+	  ,SalesTerritory.SalesLastYear AS [SalesLastYear]
+	  ,SalesYTD - SalesLastYear
+
+FROM [AdventureWorks2019].[Sales].[SalesTerritory] AS SalesTerritory
+WHERE CountryRegionCode = 'US'
+
+ORDER BY [SalesYTD] DESC
+
+SELECT *
+FROM [AdventureWorks2019].[Sales].[SalesTerritory]
+
+/*
+
+Task 2 - The relationship between annual leave taken and bonus
+*/
+
+SELECT E.[JobTitle], [E].[VacationHours] AS [Annual Leave]
+	  ,CAST([S].[Bonus] AS INT) AS [Bonus]
+
+FROM [HumanResources].[Employee] AS [E]
+INNER JOIN [Sales].[SalesPerson] AS [S]
+ON [E].BusinessEntityID = [S].BusinessEntityID
+ORDER BY [Annual Leave]
+
+
+
+/*
+
+Task 3 - The revenue for each country
+
+*/
+
+
+/*
+
+Create View for StoreWithDemographics
+
+*/
+
+
+CREATE VIEW [Sales].[vStoreWithDemographics] AS 
+SELECT 
+    s.[BusinessEntityID] 
+    ,s.[Name] 
+    ,s.[Demographics].value('declare default element namespace "http://schemas.microsoft.com/sqlserver/2004/07/adventure-works/StoreSurvey"; 
+        (/StoreSurvey/AnnualSales)[1]', 'money') AS [AnnualSales] 
+    ,s.[Demographics].value('declare default element namespace "http://schemas.microsoft.com/sqlserver/2004/07/adventure-works/StoreSurvey"; 
+        (/StoreSurvey/AnnualRevenue)[1]', 'money') AS [AnnualRevenue] 
+    ,s.[Demographics].value('declare default element namespace "http://schemas.microsoft.com/sqlserver/2004/07/adventure-works/StoreSurvey"; 
+        (/StoreSurvey/BankName)[1]', 'nvarchar(50)') AS [BankName] 
+    ,s.[Demographics].value('declare default element namespace "http://schemas.microsoft.com/sqlserver/2004/07/adventure-works/StoreSurvey"; 
+        (/StoreSurvey/BusinessType)[1]', 'nvarchar(5)') AS [BusinessType] 
+    ,s.[Demographics].value('declare default element namespace "http://schemas.microsoft.com/sqlserver/2004/07/adventure-works/StoreSurvey"; 
+        (/StoreSurvey/YearOpened)[1]', 'integer') AS [YearOpened] 
+    ,s.[Demographics].value('declare default element namespace "http://schemas.microsoft.com/sqlserver/2004/07/adventure-works/StoreSurvey"; 
+        (/StoreSurvey/Specialty)[1]', 'nvarchar(50)') AS [Specialty] 
+    ,s.[Demographics].value('declare default element namespace "http://schemas.microsoft.com/sqlserver/2004/07/adventure-works/StoreSurvey"; 
+        (/StoreSurvey/SquareFeet)[1]', 'integer') AS [SquareFeet] 
+    ,s.[Demographics].value('declare default element namespace "http://schemas.microsoft.com/sqlserver/2004/07/adventure-works/StoreSurvey"; 
+        (/StoreSurvey/Brands)[1]', 'nvarchar(30)') AS [Brands] 
+    ,s.[Demographics].value('declare default element namespace "http://schemas.microsoft.com/sqlserver/2004/07/adventure-works/StoreSurvey"; 
+        (/StoreSurvey/Internet)[1]', 'nvarchar(30)') AS [Internet] 
+    ,s.[Demographics].value('declare default element namespace "http://schemas.microsoft.com/sqlserver/2004/07/adventure-works/StoreSurvey"; 
+        (/StoreSurvey/NumberEmployees)[1]', 'integer') AS [NumberEmployees] 
+FROM [Sales].[Store] s;
+
+
+/*
+
+Create View for StoreWithAddresses
+
+*/
+
+
+CREATE VIEW [Sales].[vStoreWithAddresses] AS 
+SELECT 
+    s.[BusinessEntityID] 
+    ,s.[Name] 
+    ,at.[Name] AS [AddressType]
+    ,a.[AddressLine1] 
+    ,a.[AddressLine2] 
+    ,a.[City] 
+    ,sp.[Name] AS [StateProvinceName] 
+    ,a.[PostalCode] 
+    ,cr.[Name] AS [CountryRegionName] 
+FROM [Sales].[Store] s
+    INNER JOIN [Person].[BusinessEntityAddress] bea 
+    ON bea.[BusinessEntityID] = s.[BusinessEntityID] 
+    INNER JOIN [Person].[Address] a 
+    ON a.[AddressID] = bea.[AddressID]
+    INNER JOIN [Person].[StateProvince] sp 
+    ON sp.[StateProvinceID] = a.[StateProvinceID]
+    INNER JOIN [Person].[CountryRegion] cr 
+    ON cr.[CountryRegionCode] = sp.[CountryRegionCode]
+    INNER JOIN [Person].[AddressType] at 
+    ON at.[AddressTypeID] = bea.[AddressTypeID];
+    
+/*
+
+Finding the revenue for each country
+
+*/
+
+SELECT CountryRegionName AS [Country]
+	  ,SUM([AnnualRevenue]) AS [Total Revenue]
+  
+FROM [AdventureWorks2019].[Sales].[vStoreWithDemographics] AS sd
+INNER JOIN [AdventureWorks2019].[Sales].[vStoreWithAddresses] AS sa
+ON sd.BusinessEntityID = sa.BusinessEntityID
+
+GROUP BY CountryRegionName
+ORDER BY [Total Revenue] DESC
+
+
+/*
+
+Task 4 - Average Sick Leave per Job (Using Subquery)
+
+*/
+
+SELECT [OrganizationLevel], [NewJob] AS [JobTitle], AVG(SickLeaveHours) AS [AverageSickLeave]
+FROM
+
+(SELECT
+	   [OrganizationLevel]
+	  ,[JobTitle]
+	  ,[SickLeaveHours]
+	  ,CASE WHEN JobTitle LIKE '%Supervisor - WC%' THEN 'Production Supervisor'
+	   WHEN JobTitle LIKE '%Technician - WC%' THEN 'Production Technician'
+	   ELSE JobTitle END AS [NewJob]
+
+FROM [AdventureWorks2019].[HumanResources].[Employee] ) GroupedJob
+
+GROUP BY [NewJob], [OrganizationLevel]
+ORDER BY [OrganizationLevel], [AverageSickLeave] DESC
+
+/*
+
+Task 5 - Average Sick Leave per Job (Using Subquery)
+
+*/
+
+SELECT [Name]
+	  ,[YearOpened]
+	  ,[AnnualRevenue] AS [Annual Revenue]
+	  ,year('2019') - [YearOpened] AS [Store Trading Duration]
+
+FROM
+(
+SELECT  
+       [Name]
+      ,[Demographics].value('declare default element namespace "http://schemas.microsoft.com/sqlserver/2004/07/adventure-works/StoreSurvey"; 
+        (/StoreSurvey/AnnualRevenue)[1]', 'money') AS [AnnualRevenue]
+      ,[Demographics].value('declare default element namespace "http://schemas.microsoft.com/sqlserver/2004/07/adventure-works/StoreSurvey"; 
+        (/StoreSurvey/YearOpened)[1]', 'integer') AS [YearOpened]
+
+ FROM [Sales].[Store]
+ ) as Demographics
+
+ ORDER BY [Annual Revenue] DESC
+
+/*
+
+Task 6 - The relationship between the size of the stores, number of employees and revenue
+
+*/
+
+SELECT [SquareFeet]
+	  ,[NumberEmployees]
+	  ,SUM([AnnualRevenue]) AS [Total Revenue]
+
+FROM 
+
+--Subquery to extract data from SquareFeet, AnnualRevenue, NumberEmployees from the xml links within the Demographic columns
+(SELECT 
+		[Demographics].value('declare default element namespace "http://schemas.microsoft.com/sqlserver/2004/07/adventure-works/StoreSurvey"; 
+        (/StoreSurvey/SquareFeet)[1]', 'integer') AS [SquareFeet]
+ 
+	    ,[Demographics].value('declare default element namespace "http://schemas.microsoft.com/sqlserver/2004/07/adventure-works/StoreSurvey"; 
+        (/StoreSurvey/AnnualRevenue)[1]', 'money') AS [AnnualRevenue]
+
+		,[Demographics].value('declare default element namespace "http://schemas.microsoft.com/sqlserver/2004/07/adventure-works/StoreSurvey"; 
+        (/StoreSurvey/NumberEmployees)[1]', 'integer') AS [NumberEmployees]
+        
+FROM [Sales].[Store]) sales
+ 
+GROUP BY [SquareFeet], [NumberEmployees]
+ORDER BY [SquareFeet], [Total Revenue]
